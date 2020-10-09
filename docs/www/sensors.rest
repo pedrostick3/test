@@ -1,0 +1,38 @@
+GET http://localhost:8000/sensors
+
+###
+
+POST http://localhost:8000/sensor
+Content-Type: application/json
+
+{
+    "name" : "SolTroiaREST",
+    "date": "2020-12-1 12:36:59",
+    "sensorId": "GeralMonofasico",
+    "value": "75"
+}
+
+###
+
+POST http://localhost:8000/sensor
+Content-Type: application/json
+
+{
+	"id":"14000",
+	"local":"Louriceira de Cima",
+	"depart":"Casa Dionisio",
+	"updated_at":"2020-09-11 09:32:39 UTC",
+	"last_write_at":"2020-09-11 09:31:58 UTC",
+	"sensors":{ 
+		"Geral":[
+			{"created_at":"2020-09-10 00:00:07 UTC","sensor_id":"Geral","value":"175.0"},
+			{"created_at":"2020-09-10 00:01:07 UTC","sensor_id":"Geral","value":"176.0"}
+		],
+		"LDR":[
+			{"created_at":"2020-09-11 09:31:39 UTC","sensor_id":"LDR","value":"34.0"}
+		],
+		"Focado":[
+			{"created_at":"2020-09-11 09:32:39 UTC","sensor_id":"Focado","value":"85.0"}
+		]
+	}
+}
