@@ -1,8 +1,0 @@
-{
-    "server": {
-        "port": 8000
-    },
-    "mongoDB": {
-        "connectionString": "mongodb+srv://blue:energy@cluster0.8jb5c.mongodb.net/bluenergy?retryWrites=true&w=majority"
-    }
-}
