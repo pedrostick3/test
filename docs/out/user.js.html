@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: user.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: user.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>﻿'use strict';
+
+/** Classe User */
+/**
+ * @class Representa um user do website
+ * @constructs User
+ * @property {string} email - email do utilizador.
+ * @property {string} password - password do utilizador.
+ * @property {number} accessLevel - nível de permissões do utilizador.
+ */
+function User(email, password, accessLevel) {
+    if(!verificar(email, password)) return;
+    this.email = email;
+    this.password = password;
+    this.accessLevel = accessLevel;
+}
+
+/** Propriedades e Métodos de Classe */
+/**
+ * Retorna uma String, com código HTML, para construir uma linha de cabeçalho.
+ * @param {User} user - user para retirar os atributos
+ * @property {string} cabecalhoTabela - devolve uma String com código HTML para construir uma linha de cabeçalho. 
+ */
+User.cabecalhoTabela = function (user) {
+    let resultado = "&lt;tr>";
+    Object.keys(user).forEach(propriedade => {
+        resultado += "&lt;th>" + propriedade + "&lt;/th>";
+    })
+    return resultado += "&lt;/tr>";
+};
+
+/** Métodos de Instância */
+/**
+ * Representação da informação de um user sob a forma do código HTML para construir uma linha de tabela.
+ * @returns {string} representação da informação de um user sob a forma do código HTML para construir uma linha de tabela.
+ */
+User.prototype.toString = function () {
+    let resultado = "&lt;tr>";
+    let count = 0;
+    Object.values(this).forEach(valor => {
+        if(count === 1){
+            resultado += "&lt;td>" + Array(valor.length + 1).join("*") + "&lt;/td>";
+        }
+        else{
+            resultado += "&lt;td>" + valor + "&lt;/td>";
+        }
+        count++;
+    })
+    return resultado += "&lt;/tr>";
+};
+
+/** 
+ * Verifica se o user indicado existente na tabela é administrador.
+ * @returns {bool} retorna true se o user tem privilégio de administrador.
+ */
+function isAdminUser(user) { return (user.email === window.userAutenticado &amp;&amp; user.accessLevel === 1); };
+
+
+/** Métodos Dedicados à Interação com os Dados dos Users da BD */
+/**
+ * Função que tem como principal objetivo solicitar ao servidor NODE.JS o recurso user através do verbo GET,
+ * usando pedidos assincronos e JSON.
+ * Tem como objetivo servir de apoio e base a funções com objetivos específicos.
+ * @param {func} - função a ser efetuada.
+ */
+function doFunctionUsingUsersBdData(funcToWorkWithAllUsers, funcAfterWorkingWithAllUsers){
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = 'json';
+    xhr.open('GET', '/users');
+    xhr.onreadystatechange = function () {
+        if (this.readyState === XMLHttpRequest.DONE &amp;&amp; this.status === 200) {
+            this.response.users.forEach(bdUser => {
+                let user = new User(bdUser.email, bdUser.password, bdUser.accessLevel);
+                funcToWorkWithAllUsers(user);
+            });
+            funcAfterWorkingWithAllUsers();
+        }
+    };
+    xhr.send();
+}
+
+/**
+ * Função que insere ou atualiza o recurso user com um pedido ao servidor NODE.JS através do verbo POST ou PUT, 
+ * usando pedidos assincronos e JSON
+ * @param {String} acao - controla qual a operação do CRUD queremos fazer
+ */
+function createUpdateUser(acao, user) {
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = 'json';
+    if (acao === 'create') xhr.open('POST', '/user');
+    else if (acao === 'update') xhr.open('PUT', '/user');
+    xhr.onreadystatechange = function () {
+        if (this.readyState === XMLHttpRequest.DONE &amp;&amp; this.status === 200) apresentarTabela();
+    }
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify(user));
+}
+
+/**
+ * Função que apaga o recurso user com um pedido ao NODE.JS através do verbo DELETE, usando pedidos assincronos e JSON
+ */
+function removeUser(email) {
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = 'json';
+    xhr.open('DELETE', '/user/' + email);
+    xhr.onreadystatechange = function () {
+        if (this.readyState === XMLHttpRequest.DONE &amp;&amp; this.status === 200) apresentarTabela();
+    }
+    xhr.send();
+}
+
+/** Métodos para Construção da Tabela do Modo Administrador */
+/**
+ * Cria uma string com código HTML para construir uma tabela com a informação de todos os users, colocando-a
+ * no div com id="userOpinions".
+ */
+function apresentarTabela() {
+    let isAdmin = false;
+
+    let resultado = "&lt;table>&lt;thead>" + User.cabecalhoTabela(new User("email@email.pt", "password", 2)) + "&lt;/thead>";
+    doFunctionUsingUsersBdData(
+        function (user) { 
+            resultado += user;
+            if(isAdminUser(user)) isAdmin = true; 
+        },
+        function () {
+            resultado += "&lt;/table>";
+            if(isAdmin) document.getElementById("userOpinions").innerHTML = resultado;
+        });
+};
+
+/** Métodos de Users com privilégios de Administrador */
+/**
+ * Acrescenta um user à tabela.
+ */
+function acrescentar() {
+    let informacao = prompt("Indique os dados do novo utilizador a adicionar:", "&lt;email>|&lt;password>|&lt;permissão>");
+    if (informacao) {
+        var campos = informacao.split("|");
+        if (campos.length !== 3) alert("Dados mal introduzidos. Devia ser '&lt;email>|&lt;password>|&lt;permissão>'!");
+        else createUpdateUser('create', new User(campos[0], campos[1], parseInt(campos[2], 10)));
+    }
+};
+
+/** 
+ * Remove users da tabela.
+ */
+function remover() {
+    let email = prompt("Indique o email do utilizador a remover:", "&lt;email>");
+    if (verificar(email, "password")) removeUser(encodeURI(email));
+};
+
+/** 
+ * Altera os privilégios de um user da tabela.
+ */
+function alterarPrivilegios() {
+    let email = prompt("Indique o email do utilizador a alterar:", "&lt;email>");
+    if (verificar(email,"password")) {
+        doFunctionUsingUsersBdData(function (user){
+            if(user.email === email){
+                if(user.accessLevel === 1) createUpdateUser('update', new User(email, user.password, 2));
+                else createUpdateUser('update', new User(email, user.password, 1));
+            }
+        }, function (){});
+    }
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="User.html">User</a></li></ul><h3>Global</h3><ul><li><a href="global.html#acrescentar">acrescentar</a></li><li><a href="global.html#alterarPrivilegios">alterarPrivilegios</a></li><li><a href="global.html#apresentarTabela">apresentarTabela</a></li><li><a href="global.html#createUpdateUser">createUpdateUser</a></li><li><a href="global.html#doFunctionUsingUsersBdData">doFunctionUsingUsersBdData</a></li><li><a href="global.html#isAdminUser">isAdminUser</a></li><li><a href="global.html#remover">remover</a></li><li><a href="global.html#removeUser">removeUser</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a> on Tue Jul 14 2020 22:17:48 GMT+0100 (GMT+01:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
